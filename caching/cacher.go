@@ -104,6 +104,7 @@ func (c *contentCache) refresh() error {
 
 func (c *contentCache) doRefresh(chErr chan error) {
 	defer c.Done()
+	defer close(chErr)
 	res, err := http.Get(c.url)
 	if err != nil {
 		chErr <- ContentFetchError(fmt.Sprintf("GET failed: %v", err))
@@ -120,13 +121,18 @@ func (c *contentCache) doRefresh(chErr chan error) {
 		chErr <- InternalError(fmt.Sprintf("ready body data failed: %v", err))
 		return
 	}
-	logger.WriteDebug("data: %s", data)
 	tpl, err := template.New("remote").Parse(string(data))
+	if err != nil {
+		chErr <- ContentFetchError(fmt.Sprintf("invalid template: %v", err))
+		return
+	}
 	var buf bytes.Buffer
-	tpl.Execute(&buf, tplData{helpers.BaseURL})
+	err = tpl.Execute(&buf, tplData{helpers.BaseURL})
+	if err != nil {
+		chErr <- ContentFetchError(fmt.Sprintf("render template error: %v", err))
+		return
+	}
 	c.data = buf.Bytes()
-	logger.WriteDebug("data1: %s", c.data)
 	c.timer.Renew()
 	chErr <- nil
-	close(chErr)
 }
