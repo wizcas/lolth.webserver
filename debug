@@ -6,8 +6,8 @@ cleanup() {
     echo "Done"
 }
 
-# export BASE_URL="https://s3-us-west-1.amazonaws.com/quali-landing"
-export BASE_URL="https://cinapp.quasarproductions.cn/"
+export BASE_URL="https://s3-us-west-1.amazonaws.com/quali-landing"
+# export BASE_URL="https://cinapp.quasarproductions.cn/"
 export PORT=8728
 go build -o server
 chmod +x server

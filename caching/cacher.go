@@ -22,10 +22,10 @@ var (
 
 type contentCache struct {
 	sync.WaitGroup
-	url   string
-	hash  string
-	data  []byte
-	timer *helpers.Timer
+	url        string
+	modifiedAt time.Time
+	data       []byte
+	timer      *helpers.Timer
 }
 type tplData struct {
 	// BaseURL 站点根级URL
@@ -52,12 +52,12 @@ func GetCachedContent(relpath string) (data []byte, err error) {
 	return
 }
 
-func (c *contentCache) getRemoteHash() (string, error) {
+func (c *contentCache) getLastModified() (time.Time, error) {
 	res, err := http.Head(c.url)
 	if err != nil {
-		return "", err
+		return time.Time{}, err
 	}
-	return helpers.ParseETag(res.Header.Get("Etag"))
+	return helpers.ParseHTTPDateTime(res.Header.Get("Last-Modified"))
 }
 
 func (c *contentCache) isObsoleted() bool {
@@ -66,23 +66,23 @@ func (c *contentCache) isObsoleted() bool {
 	if c.timer.IsEnabled() && !c.timer.IsTimeUp() {
 		return false
 	}
-	if len(c.hash) <= 0 {
+	if c.modifiedAt.IsZero() {
 		// newly created cache
 		return true
 	}
 	c.Add(1)
 	defer c.Done()
-	remoteHash, err := c.getRemoteHash()
+	remoteModified, err := c.getLastModified()
 	if err != nil {
-		logger.WriteError("get remote hash failed: %v", err)
+		logger.WriteError("get remote header failed: %v", err)
 		return false
 	}
-	logger.WriteDebug("local hash: %s, remote hash: %s", c.hash, remoteHash)
-	sameHash := remoteHash == c.hash
-	if sameHash {
+	logger.WriteDebug("local modified: %s, remote modified: %s", c.modifiedAt, remoteModified)
+	sameTime := remoteModified.Equal(c.modifiedAt)
+	if sameTime {
 		c.timer.Renew()
 	}
-	return !sameHash
+	return !sameTime
 }
 
 func (c *contentCache) refresh() error {
@@ -109,22 +109,23 @@ func (c *contentCache) doRefresh(chErr chan error) {
 		chErr <- ContentFetchError(fmt.Sprintf("GET failed: %v", err))
 		return
 	}
-	logger.WriteDebug("header: %v\n", res.Header)
-	hash, err := helpers.ParseETag(res.Header.Get("Etag"))
+	remoteModified, err := helpers.ParseHTTPDateTime(res.Header.Get("Last-Modified"))
 	if err != nil {
-		chErr <- ContentFetchError(fmt.Sprintf("parse ETag failed: %v", err))
+		chErr <- ContentFetchError(fmt.Sprintf("parse Last-Modified header failed: %v", err))
 		return
 	}
-	c.hash = hash
+	c.modifiedAt = remoteModified
 	data, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		chErr <- InternalError(fmt.Sprintf("ready body data failed: %v", err))
 		return
 	}
+	logger.WriteDebug("data: %s", data)
 	tpl, err := template.New("remote").Parse(string(data))
 	var buf bytes.Buffer
 	tpl.Execute(&buf, tplData{helpers.BaseURL})
 	c.data = buf.Bytes()
+	logger.WriteDebug("data1: %s", c.data)
 	c.timer.Renew()
 	chErr <- nil
 	close(chErr)
