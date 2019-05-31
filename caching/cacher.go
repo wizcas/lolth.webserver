@@ -20,6 +20,10 @@ var (
 	RefreshInterval = helpers.EnvVar{Key: "REFRESH_INTERVAL", DefaultValue: "30"}.GetInt()
 )
 
+const (
+	headerLastModified = "Last-Modified"
+)
+
 type contentCache struct {
 	sync.WaitGroup
 	url        string
@@ -57,7 +61,7 @@ func (c *contentCache) getLastModified() (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	return helpers.ParseHTTPDateTime(res.Header.Get("Last-Modified"))
+	return helpers.ParseHTTPDateTime(res.Header.Get(headerLastModified))
 }
 
 func (c *contentCache) isObsoleted() bool {
@@ -110,7 +114,7 @@ func (c *contentCache) doRefresh(chErr chan error) {
 		chErr <- ContentFetchError(fmt.Sprintf("GET failed: %v", err))
 		return
 	}
-	remoteModified, err := helpers.ParseHTTPDateTime(res.Header.Get("Last-Modified"))
+	remoteModified, err := helpers.ParseHTTPDateTime(res.Header.Get(headerLastModified))
 	if err != nil {
 		chErr <- ContentFetchError(fmt.Sprintf("parse Last-Modified header failed: %v", err))
 		return
