@@ -104,12 +104,13 @@ func (c *contentCache) refresh() error {
 
 func (c *contentCache) doRefresh(chErr chan error) {
 	defer c.Done()
+	defer close(chErr)
 	res, err := http.Get(c.url)
 	if err != nil {
 		chErr <- ContentFetchError(fmt.Sprintf("GET failed: %v", err))
 		return
 	}
-	logger.WriteDebug("header: %v\n", res.Header)
+	// logger.WriteDebug("header: %v\n", res.Header)
 	hash, err := helpers.ParseETag(res.Header.Get("Etag"))
 	if err != nil {
 		chErr <- ContentFetchError(fmt.Sprintf("parse ETag failed: %v", err))
@@ -122,10 +123,19 @@ func (c *contentCache) doRefresh(chErr chan error) {
 		return
 	}
 	tpl, err := template.New("remote").Parse(string(data))
+	if err != nil {
+		chErr <- ContentFetchError(fmt.Sprintf("invalid template: %v", err))
+		return
+	}
 	var buf bytes.Buffer
-	tpl.Execute(&buf, tplData{helpers.BaseURL})
+	logger.WriteDebug("base url: %s, %v", helpers.BaseURL, tpl)
+	err = tpl.Execute(&buf, tplData{helpers.BaseURL})
+	if err != nil {
+		chErr <- ContentFetchError(fmt.Sprintf("render template error: %v", err))
+		return
+	}
 	c.data = buf.Bytes()
+	logger.WriteDebug("html: %s", c.data)
 	c.timer.Renew()
 	chErr <- nil
-	close(chErr)
 }
