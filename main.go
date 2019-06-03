@@ -22,7 +22,8 @@ var IndexPath = helpers.EnvVar{Key: "INDEX_PATH", DefaultValue: "index.html"}.Ge
 
 var assetSuffixes = []string{
 	".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico",
-	".txt",
+	".js", ".css", ".txt",
+	".woff2",
 	".webmanifest",
 }
 
