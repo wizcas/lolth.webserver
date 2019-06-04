@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"quasar-ai.com/bast/marketing.landing/logger"
+	"quasar-ai.com/lolth/server.static/logger"
 )
 
 // EnvVar 用于获取环境变量的数据结构

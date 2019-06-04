@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"quasar-ai.com/bast/marketing.landing/helpers"
+	"quasar-ai.com/lolth/server.static/helpers"
 
-	"quasar-ai.com/bast/marketing.landing/logger"
+	"quasar-ai.com/lolth/server.static/logger"
 )
 
 // 环境变量

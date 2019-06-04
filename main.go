@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	"quasar-ai.com/bast/marketing.landing/logger"
+	"quasar-ai.com/lolth/server.static/logger"
 
-	"quasar-ai.com/bast/marketing.landing/helpers"
+	"quasar-ai.com/lolth/server.static/helpers"
 
 	"github.com/gin-gonic/gin"
-	"quasar-ai.com/bast/marketing.landing/caching"
+	"quasar-ai.com/lolth/server.static/caching"
 )
 
 // Port 服务器监听端口

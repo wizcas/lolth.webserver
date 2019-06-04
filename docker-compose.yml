@@ -1,0 +1,10 @@
+version: '2.1'
+
+services:
+  lolth.server.static:
+    image: lolth.server.static
+    build: .
+    ports:
+      - 8080:8080
+    environment: 
+        - BASE_URL=https://s3-us-west-2.amazonaws.com/lolth.demo # 不要加引号

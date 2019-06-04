@@ -1,10 +1,11 @@
 package helpers
 
 import (
+	"fmt"
 	"net/url"
 	"path"
 
-	"quasar-ai.com/bast/marketing.landing/logger"
+	"quasar-ai.com/lolth/server.static/logger"
 )
 
 // BaseURL 站点根级URL
@@ -14,7 +15,7 @@ var BaseURL = EnvVar{Key: "BASE_URL", Required: true, NotEmpty: true}.GetString(
 func ResolveURL(relpath string) string {
 	u, err := url.Parse(BaseURL)
 	if err != nil {
-		panic("invalid base URL")
+		panic(fmt.Sprintf("invalid base URL: %v", err))
 	}
 	u.Path = path.Join(u.Path, relpath)
 	return u.String()

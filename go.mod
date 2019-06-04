@@ -1,4 +1,4 @@
-module quasar-ai.com/bast/marketing.landing
+module quasar-ai.com/lolth/server.static
 
 go 1.12
 
