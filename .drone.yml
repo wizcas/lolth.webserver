@@ -1,0 +1,58 @@
+---
+kind: pipeline
+name: nightmare
+
+platform:
+  os: linux
+  arch: amd64
+
+clone:
+  depth: 1
+
+steps:
+- name: weaver
+  image: 182307804868.dkr.ecr.us-west-2.amazonaws.com/bast/gobase:v2.0.0
+  commands:
+  - "CGO_ENABLED=0 GOOS=linux go build -s -w\" -a -installsuffix cgo -o artifact/webserver ."
+  - cp /etc/ssl/certs/ca-certificates.crt artifact
+  volumes:
+  - name: go-mod-cache
+    path: /go/pkg/mod/
+
+- name: docker
+  image: plugins/ecr
+  settings:
+    access_key:
+      from_secret: aws_access_key
+    build_args:
+    - "tag=${DRONE_TAG}"
+    - "commit_id=${DRONE_COMMIT}"
+    region: us-west-2
+    registry:  182307804868.dkr.ecr.us-west-2.amazonaws.com
+    repo: bast/quali.admin # FIX ME
+    secret_key:
+      from_secret: aws_secret_key
+    tags:
+    - "${DRONE_TAG}"
+    - latest
+
+- name: herald
+  image: appleboy/drone-ssh
+  settings:
+    host: bast-admin.dev.qualishop.us # FIX ME
+    key:
+      from_secret: ssh_key
+    port: 22
+    script:
+    - cd /home/bast/bast.api # IX ME
+    - ./upgradeAdmin # IX ME
+    user: bast
+
+volumes:
+- name: go-mod-cache
+  host:
+    path: /var/cache/gomod/
+
+trigger:
+  event:
+  - tag
