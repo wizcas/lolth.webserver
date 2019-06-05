@@ -9,7 +9,6 @@ RUN CGO_ENABLED=0 go install -v ./...
 
 # final w/ scratch
 FROM scratch
-# RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/server.static /app
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 ENTRYPOINT ["./app"]
